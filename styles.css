@@ -1,0 +1,864 @@
+:root {
+    --bg-dark: #050505;
+    --card-bg: rgba(255, 255, 255, 0.03);
+    --card-border: rgba(255, 255, 255, 0.1);
+    --text-main: #e0e0e0;
+    --accent-cyan: #00f3ff;
+    --accent-pink: #ff00aa;
+    --valence-color: #ff0055;
+    --inner-color: #00a8ff;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Microsoft YaHei', 'PingFang SC', system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+.bg-animation {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+    background: 
+        radial-gradient(circle at 50% 50%, rgba(20, 30, 50, 0.5) 0%, transparent 50%),
+        linear-gradient(0deg, rgba(0,243,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,243,255,0.03) 1px, transparent 1px);
+    background-size: 100% 100%, 40px 40px, 40px 40px;
+}
+
+/* === 导航栏区域优化 === */
+.control-panel {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    background: rgba(20, 20, 25, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 12px 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+    margin-bottom: 15px;
+    z-index: 100;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+    position: sticky;
+    top: 0;
+}
+
+.title-box h1 {
+    font-size: 20px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    background: linear-gradient(90deg, #fff, var(--accent-cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    white-space: nowrap;
+}
+
+.mode-group {
+    display: flex;
+    background: rgba(0,0,0,0.3);
+    border-radius: 8px;
+    padding: 4px;
+    gap: 4px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.mode-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: #aaa;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: 0.3s;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.mode-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+.mode-btn.active {
+    background: var(--accent-cyan);
+    color: #000;
+    font-weight: bold;
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.4);
+}
+
+.search-box {
+    width: 100%;
+    max-width: 280px;
+}
+
+.search-box input {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid #444;
+    color: #fff;
+    padding: 10px 15px;
+    border-radius: 8px;
+    outline: none;
+    width: 100%;
+    font-size: 14px;
+}
+
+/* === 周期表容器 === */
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 10px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.periodic-table {
+    display: grid;
+    grid-template-columns: repeat(18, 68px);
+    grid-template-rows: repeat(10, 76px);
+    gap: 5px;
+    margin: 0 auto 30px;
+    transition: 0.5s;
+    width: max-content;
+}
+
+.element {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 6px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 2px;
+    opacity: 0;
+    transform: scale(0.8);
+}
+
+.element.visible { opacity: 1; transform: scale(1); }
+
+.element:hover {
+    transform: scale(1.15) !important;
+    z-index: 100;
+    box-shadow: 0 0 25px rgba(0,0,0,0.8);
+    border-color: #fff;
+}
+
+.element .atomic-number { 
+    position: absolute; 
+    top: 4px; 
+    left: 5px; 
+    font-size: 10px;
+    opacity: 0.6; 
+}
+
+.element .symbol { 
+    font-size: 24px;
+    font-weight: 700; 
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5); 
+    line-height: 1.1;
+    margin-top: 4px;
+    font-family: Arial, sans-serif;
+}
+
+.element .name { 
+    font-size: 11px; 
+    opacity: 0.95; 
+    margin-top: 0px; 
+    font-weight: 500;
+}
+
+.element .detail-val { 
+    position: absolute; bottom: 3px; right: 5px; 
+    font-size: 9px;
+    color: var(--accent-cyan); 
+    display: none; 
+    font-weight: bold;
+}
+
+.element.placeholder {
+    border-style: dashed;
+    background: rgba(255, 255, 255, 0.01);
+    justify-content: center;
+    align-items: center;
+    gap: 2px;
+}
+.element.placeholder .range-num {
+    font-size: 11px;
+    color: var(--accent-cyan);
+    font-weight: bold;
+}
+.element.placeholder .name {
+    font-size: 11px;
+    opacity: 0.8;
+    margin: 0;
+}
+.element.placeholder:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-style: solid;
+    transform: scale(1.05) !important; 
+}
+
+.periodic-table.heatmap-active .element {
+    border-color: rgba(0,0,0,0.2);
+}
+.periodic-table.heatmap-active .element .detail-val { display: block; }
+
+/* === 图例区域优化 === */
+.legend-wrapper {
+    width: 100%;
+    padding: 0 10px;
+    margin-bottom: 15px;
+}
+
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+.legend-item {
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 15px;
+    background: rgba(255,255,255,0.05);
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: 0.3s;
+}
+.legend-item:hover { background: rgba(255,255,255,0.1); }
+.legend-item.active {
+    background: rgba(255,255,255,0.2);
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+}
+
+.legend-color { width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; flex-shrink: 0; }
+
+/* === 弹窗样式 === */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    display: flex; justify-content: center; align-items: center;
+    opacity: 0; pointer-events: none; transition: 0.3s;
+    padding: 10px;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+
+.hologram-card {
+    width: 100%;
+    max-width: 1000px;
+    max-height: 90vh;
+    background: linear-gradient(135deg, #1a1a20, #0a0a10);
+    border: 1px solid rgba(0, 243, 255, 0.2);
+    box-shadow: 0 0 60px rgba(0, 243, 255, 0.1);
+    border-radius: 16px;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+}
+
+/* 优化后的关闭按钮 */
+.close-btn {
+    position: absolute; 
+    top: 15px; 
+    right: 15px; 
+    font-size: 24px;
+    color: #fff; 
+    cursor: pointer; 
+    z-index: 2000;
+    width: 36px; 
+    height: 36px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 50%;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: all 0.2s;
+}
+.close-btn:hover { 
+    background: rgba(255, 0, 0, 0.8);
+    transform: rotate(90deg);
+}
+
+.atom-visualizer {
+    width: 35%;
+    min-width: 280px;
+    background: radial-gradient(circle at center, rgba(0,243,255,0.05), transparent 70%);
+    display: flex; 
+    justify-content: center; 
+    align-items: center;
+    perspective: 800px;
+    border-right: 1px solid rgba(255,255,255,0.05);
+    position: relative;
+    cursor: grab;
+    user-select: none;
+}
+
+.atom-visualizer:active { cursor: grabbing; }
+
+.visualizer-hint {
+    position: absolute;
+    bottom: 15px;
+    color: rgba(255,255,255,0.4);
+    font-size: 12px;
+    pointer-events: none;
+}
+
+.atom-container {
+    width: 220px; height: 220px;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.1s linear; 
+}
+
+.nucleus {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    width: 12px; height: 12px; background: #fff; border-radius: 50%;
+    box-shadow: 0 0 20px #fff; z-index: 20;
+    transform-style: preserve-3d;
+}
+
+.orbit-ring {
+    position: absolute; top: 50%; left: 50%;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.15);
+    transform-style: preserve-3d;
+}
+
+.electron {
+    position: absolute; top: 50%; left: 50%;
+    border-radius: 50%;
+    transform-origin: 0 0;
+}
+
+.electron.inner {
+    width: 5px; height: 5px;
+    background: var(--inner-color);
+    box-shadow: 0 0 5px var(--inner-color);
+}
+
+.electron.valence {
+    width: 8px; height: 8px;
+    background: var(--valence-color);
+    box-shadow: 0 0 12px var(--valence-color);
+    z-index: 10;
+}
+
+.info-panel { 
+    flex: 1; 
+    padding: 25px; 
+    display: flex; 
+    flex-direction: column; 
+    overflow-y: auto; 
+    min-width: 0;
+}
+
+.header-row { 
+    display: flex; 
+    align-items: baseline; 
+    margin-bottom: 15px; 
+    border-bottom: 1px solid rgba(255,255,255,0.1); 
+    padding-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-right: 30px;
+}
+.big-symbol { font-size: 48px; font-weight: 700; color: var(--accent-cyan); margin-right: 15px; line-height: 1; font-family: Arial;}
+.big-name { font-size: 24px; color: #fff; font-weight: bold; }
+.category-tag { 
+    margin-left: auto; 
+    padding: 5px 10px; 
+    border: 1px solid #444; 
+    border-radius: 6px; 
+    font-size: 12px; 
+    color: #aaa; 
+    text-transform: uppercase; 
+    white-space: nowrap;
+}
+
+.config-box {
+    background: rgba(0, 243, 255, 0.05);
+    padding: 12px 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-family: 'Courier New', monospace;
+    flex-shrink: 0;
+}
+.config-label { font-size: 12px; color: var(--accent-cyan); margin-bottom: 5px; display: block; font-weight: bold;}
+.config-text { 
+    font-size: 14px; 
+    color: #e0e0e0; 
+    letter-spacing: 1px; 
+    word-break: break-all;
+    white-space: normal;
+    line-height: 1.5;
+}
+
+.info-section {
+    margin-bottom: 20px;
+    flex-shrink: 0;
+}
+.info-section h3 {
+    font-size: 13px;
+    color: var(--accent-cyan);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid rgba(0, 243, 255, 0.2);
+    padding-bottom: 5px;
+}
+
+.props-grid { 
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 10px; 
+}
+.prop-item { 
+    background: rgba(255,255,255,0.02);
+    padding: 8px 10px;
+    border-radius: 6px;
+    border-left: 3px solid rgba(0, 243, 255, 0.3);
+}
+.prop-item label { font-size: 11px; color: #888; display: block; margin-bottom: 3px; }
+.prop-item span { font-size: 14px; color: #fff; font-weight: 500; }
+
+.valence-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.valence-tag {
+    background: linear-gradient(135deg, rgba(255,0,85,0.2), rgba(255,0,170,0.1));
+    border: 1px solid rgba(255,0,85,0.4);
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 14px;
+    color: #ff6699;
+    font-weight: 600;
+}
+
+.isotope-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.isotope-tag {
+    background: rgba(0, 168, 255, 0.1);
+    border: 1px solid rgba(0, 168, 255, 0.3);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #66ccff;
+}
+.isotope-tag .mass-num {
+    font-size: 9px;
+    vertical-align: super;
+}
+.isotope-stable {
+    background: rgba(0, 255, 136, 0.1);
+    border-color: rgba(0, 255, 136, 0.3);
+    color: #66ff99;
+}
+
+/* === 移动端横屏提示 === */
+.rotate-hint {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: rgba(0, 243, 255, 0.1);
+    border-bottom: 1px solid var(--accent-cyan);
+    padding: 8px 15px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--accent-cyan);
+    z-index: 99;
+}
+
+/* === 平板适配 (600px - 900px) === */
+@media(max-width: 900px) {
+    .hologram-card { 
+        flex-direction: column; 
+        max-height: 95vh; 
+    }
+    .atom-visualizer { 
+        width: 100%; 
+        min-width: auto; 
+        height: 200px; 
+        border-right: none; 
+        border-bottom: 1px solid #333; 
+        flex-shrink: 0;
+    }
+    .atom-container {
+        width: 180px;
+        height: 180px;
+    }
+    .props-grid { 
+        grid-template-columns: repeat(2, 1fr); 
+    }
+    .info-panel {
+        padding: 20px;
+    }
+    .big-symbol {
+        font-size: 40px;
+    }
+    .big-name {
+        font-size: 20px;
+    }
+}
+
+/* === 手机端适配 (小于600px) === */
+@media(max-width: 600px) {
+    .rotate-hint {
+        display: block;
+    }
+
+    .control-panel {
+        padding: 10px;
+        gap: 10px;
+        flex-direction: column;
+        align-items: stretch;
+        margin-bottom: 10px;
+    }
+
+    .title-box {
+        text-align: center;
+    }
+
+    .title-box h1 {
+        font-size: 18px;
+        letter-spacing: 1px;
+    }
+
+    .mode-group {
+        justify-content: center;
+        padding: 3px;
+        gap: 3px;
+    }
+
+    .mode-btn {
+        padding: 6px 8px;
+        font-size: 11px;
+    }
+
+    .search-box {
+        max-width: 100%;
+    }
+
+    .search-box input {
+        padding: 12px 15px;
+        font-size: 16px;
+    }
+
+    .table-wrapper {
+        padding: 5px;
+    }
+
+    .periodic-table {
+        grid-template-columns: repeat(18, 52px);
+        grid-template-rows: repeat(10, 60px);
+        gap: 3px;
+    }
+
+    .element .atomic-number {
+        font-size: 8px;
+        top: 2px;
+        left: 3px;
+    }
+
+    .element .symbol {
+        font-size: 18px;
+        margin-top: 2px;
+    }
+
+    .element .name {
+        font-size: 9px;
+    }
+
+    .element .detail-val {
+        font-size: 7px;
+        bottom: 2px;
+        right: 3px;
+    }
+
+    .element.placeholder .range-num {
+        font-size: 9px;
+    }
+
+    .element.placeholder .name {
+        font-size: 9px;
+    }
+
+    .element:hover {
+        transform: scale(1.1) !important;
+    }
+
+    .legend-wrapper {
+        padding: 0 5px;
+        margin-bottom: 10px;
+    }
+
+    .legend {
+        gap: 5px;
+    }
+
+    .legend-item {
+        font-size: 10px;
+        padding: 5px 8px;
+    }
+
+    .legend-color {
+        width: 8px;
+        height: 8px;
+        margin-right: 4px;
+    }
+
+    /* 弹窗移动端重大优化 */
+    .modal-overlay {
+        padding: 0;
+        align-items: flex-end;
+    }
+
+    .hologram-card {
+        max-height: 100dvh; 
+        height: 100dvh;
+        border-radius: 16px 16px 0 0;
+        flex-direction: column;
+    }
+
+    /* 移动端关闭按钮调整位置 */
+    .close-btn {
+        top: 15px;
+        right: 15px;
+        width: 40px;
+        height: 40px;
+        background: rgba(0,0,0,0.8);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+
+    .atom-visualizer {
+        height: 180px;
+        min-height: 180px;
+        padding-top: env(safe-area-inset-top); 
+    }
+
+    .atom-container {
+        width: 150px;
+        height: 150px;
+    }
+
+    .visualizer-hint {
+        font-size: 11px;
+        bottom: 10px;
+    }
+
+    .info-panel {
+        padding: 15px 20px;
+        flex: 1;
+        overflow-y: auto;
+        padding-bottom: 80px; 
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .header-row {
+        margin-bottom: 12px;
+        padding-bottom: 10px;
+        gap: 8px;
+        padding-right: 0;
+    }
+
+    .big-symbol {
+        font-size: 36px;
+        margin-right: 10px;
+    }
+
+    .big-name {
+        font-size: 18px;
+    }
+
+    #m-en-name {
+        font-size: 14px !important;
+    }
+
+    .category-tag {
+        font-size: 10px;
+        padding: 4px 8px;
+        margin-left: 0;
+    }
+
+    /* 电子排布修复 */
+    .config-box {
+        padding: 10px 12px;
+        margin-bottom: 15px;
+        overflow-x: auto;
+    }
+
+    .config-label {
+        font-size: 11px;
+    }
+
+    .config-text {
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    #m-config-shell {
+        font-size: 11px !important;
+    }
+
+    .info-section {
+        margin-bottom: 15px;
+    }
+
+    .info-section h3 {
+        font-size: 12px;
+        margin-bottom: 8px;
+    }
+
+    .props-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    .prop-item {
+        padding: 6px 8px;
+    }
+
+    .prop-item label {
+        font-size: 10px;
+    }
+
+    .prop-item span {
+        font-size: 13px;
+    }
+
+    .valence-tags {
+        gap: 6px;
+    }
+
+    .valence-tag {
+        font-size: 13px;
+        padding: 3px 10px;
+    }
+
+    .isotope-tags {
+        gap: 6px;
+    }
+
+    .isotope-tag {
+        font-size: 11px;
+        padding: 3px 8px;
+    }
+}
+
+/* === 超小屏幕 (小于400px) === */
+@media(max-width: 400px) {
+    .periodic-table {
+        grid-template-columns: repeat(18, 44px);
+        grid-template-rows: repeat(10, 52px);
+        gap: 2px;
+    }
+
+    .element .atomic-number {
+        font-size: 7px;
+    }
+
+    .element .symbol {
+        font-size: 15px;
+    }
+
+    .element .name {
+        font-size: 8px;
+    }
+
+    .mode-btn {
+        padding: 5px 6px;
+        font-size: 10px;
+    }
+
+    .legend-item {
+        font-size: 9px;
+        padding: 4px 6px;
+    }
+
+    .props-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* === 横屏模式优化 === */
+@media(max-height: 500px) and (orientation: landscape) {
+    .rotate-hint {
+        display: none;
+    }
+
+    .control-panel {
+        padding: 8px 15px;
+        flex-direction: row;
+    }
+
+    .hologram-card {
+        flex-direction: row;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+    }
+
+    .atom-visualizer {
+        width: 35%;
+        height: 100%;
+        min-width: 200px;
+    }
+
+    .info-panel {
+        padding: 15px;
+    }
+
+    .header-row {
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+    }
+
+    .big-symbol {
+        font-size: 32px;
+    }
+
+    .big-name {
+        font-size: 16px;
+    }
+
+    .config-box {
+        margin-bottom: 10px;
+        padding: 8px 10px;
+    }
+
+    .info-section {
+        margin-bottom: 10px;
+    }
+
+    .props-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }
+}
