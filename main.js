@@ -50,7 +50,13 @@ function getLocalizedText(key, lang = currentLanguage) {
             'no-data': '暂无数据',
             'drag-rotate': '拖拽旋转视角',
         'rotate-hint': '💡 横屏查看效果更佳',
-        'periodic-table-title': '元素周期表'
+        'periodic-table-title': '元素周期表',
+            'radii-shannon': '离子/晶体半径 (Shannon, Å)',
+            'radii-charge': '电荷',
+            'radii-coord': '配位',
+            'radii-spin': '自旋',
+            'radii-crystal': '晶体',
+            'radii-ionic': '离子'
         },
         en: {
             'alkali-metal': 'Alkali Metal',
@@ -87,7 +93,13 @@ function getLocalizedText(key, lang = currentLanguage) {
             'no-data': 'No data',
             'drag-rotate': 'Drag to rotate view',
         'rotate-hint': '💡 Better view in landscape mode',
-        'periodic-table-title': 'Periodic Table'
+        'periodic-table-title': 'Periodic Table',
+            'radii-shannon': 'Ionic/Crystal Radii (Shannon, Å)',
+            'radii-charge': 'Charge',
+            'radii-coord': 'Coord',
+            'radii-spin': 'Spin State',
+            'radii-crystal': 'Crystal',
+            'radii-ionic': 'Ionic'
         }
     };
     return translations[lang][key] || key;
@@ -523,6 +535,12 @@ function showModal(data) {
     document.getElementById('valence-label').innerText = getLocalizedText('common-oxidation-states');
     document.getElementById('properties-label').innerText = getLocalizedText('physical-properties');
     document.getElementById('isotopes-label').innerText = getLocalizedText('isotopes');
+    document.getElementById('radii-label').innerText = getLocalizedText('radii-shannon');
+    document.getElementById('radii-charge-th').innerText = getLocalizedText('radii-charge');
+    document.getElementById('radii-coord-th').innerText = getLocalizedText('radii-coord');
+    document.getElementById('radii-spin-th').innerText = getLocalizedText('radii-spin');
+    document.getElementById('radii-crystal-th').innerText = getLocalizedText('radii-crystal');
+    document.getElementById('radii-ionic-th').innerText = getLocalizedText('radii-ionic');
     document.getElementById('atomic-num-label').innerText = getLocalizedText('atomic-number');
     document.getElementById('atomic-mass-label').innerText = getLocalizedText('atomic-mass');
     document.getElementById('atomic-radius-label').innerText = getLocalizedText('atomic-radius');
@@ -572,6 +590,39 @@ function showModal(data) {
         });
     } else {
         isotopeContainer.innerHTML = `<span style="color:#666">${getLocalizedText('no-data')}</span>`;
+    }
+
+    const radiiBody = document.getElementById('m-radii-body');
+    const radiiSection = document.getElementById('radii-section');
+    if (data.radii && data.radii.length > 0) {
+        radiiSection.style.display = '';
+        const toAngstrom = v => v != null ? (v / 100).toFixed(3).replace(/\.?0+$/, '') : '—';
+        const formatCharge = r => r.charge ? (r.charge.startsWith('-') ? r.charge : '+' + r.charge) : '—';
+        const rowCells = r => {
+            const spin = (r.spin && String(r.spin).trim()) ? r.spin : '—';
+            const crystal = toAngstrom(r.crystal);
+            const ionic = toAngstrom(r.ionic);
+            return `<td>${r.coord || '—'}</td><td>${spin}</td><td>${crystal}</td><td>${ionic}</td>`;
+        };
+        const groups = [];
+        let lastCharge = null;
+        data.radii.forEach(r => {
+            const charge = formatCharge(r);
+            if (charge !== lastCharge) {
+                groups.push({ charge, rows: [r] });
+                lastCharge = charge;
+            } else {
+                groups[groups.length - 1].rows.push(r);
+            }
+        });
+        radiiBody.innerHTML = groups.map(g => {
+            const first = g.rows[0];
+            const firstRow = `<tr><td rowspan="${g.rows.length}">${g.charge}</td>${rowCells(first)}</tr>`;
+            const restRows = g.rows.slice(1).map(r => `<tr>${rowCells(r)}</tr>`).join('');
+            return firstRow + restRows;
+        }).join('');
+    } else {
+        radiiSection.style.display = 'none';
     }
 
     const eData = getElectronData(data.idx);

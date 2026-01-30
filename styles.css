@@ -510,6 +510,38 @@ body {
     color: #66ff99;
 }
 
+/* Shannon 离子/晶体半径表 */
+.radii-table-wrapper {
+    max-height: 180px;
+    overflow-y: auto;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.radii-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+.radii-table th,
+.radii-table td {
+    padding: 6px 8px;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.radii-table th {
+    background: rgba(0, 243, 255, 0.1);
+    color: var(--accent-cyan);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+}
+.radii-table tbody tr:nth-child(even) {
+    background: rgba(255,255,255,0.02);
+}
+.radii-table tbody tr:hover {
+    background: rgba(0, 243, 255, 0.05);
+}
+
 /* === 移动端横屏提示 === */
 .rotate-hint {
     display: none;

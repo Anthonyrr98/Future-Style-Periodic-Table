@@ -86,10 +86,22 @@
                     <h3 id="isotopes-label">同位素 (● 稳定)</h3>
                     <div class="isotope-tags" id="m-isotopes"></div>
                 </div>
+
+                <div class="info-section" id="radii-section">
+                    <h3 id="radii-label">离子/晶体半径 (Shannon, Å)</h3>
+                    <div class="radii-table-wrapper">
+                        <table class="radii-table" id="m-radii">
+                            <thead><tr><th id="radii-charge-th">电荷</th><th id="radii-coord-th">配位</th><th id="radii-spin-th">自旋</th><th id="radii-crystal-th">晶体</th><th id="radii-ionic-th">离子</th></tr></thead>
+                            <tbody id="m-radii-body"></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- Shannon 离子/晶体半径 (Radii for All Species) -->
+    <script src="radii.js"></script>
     <!-- 引入数据文件 -->
     <script src="data.js"></script>
     <!-- 引入主逻辑文件 -->

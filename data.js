@@ -152,7 +152,7 @@ const exceptions = {
     79: {'6s':1, '5d':10}
 };
 
-// === 处理后的元素数据 ===
+// === 处理后的元素数据（含 Shannon 离子/晶体半径） ===
 const elements = elementsData.map(e => ({
     idx: e.z,
     sym: e.sym,
@@ -167,5 +167,6 @@ const elements = elementsData.map(e => ({
     melt: e.melt || 0,
     boil: e.boil || 0,
     valence: e.valence || [],
-    isotopes: e.isotopes || []
+    isotopes: e.isotopes || [],
+    radii: (typeof radiiShannon !== 'undefined' ? radiiShannon[e.sym] : []) || []
 }));
