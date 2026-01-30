@@ -9,8 +9,12 @@ let currentActiveCategory = null;
 let currentLanguage = 'zh'; // 'zh' for Chinese, 'en' for English
 let rotX = 0;
 let rotY = 0;
+let scale = 1;
 let isDragging = false;
 let lastMouseX, lastMouseY;
+const MAX_COMPARE = 6;
+let compareList = []; // 待对比元素 idx 数组
+let currentModalElement = null; // 当前详情弹窗中的元素
 
 // === 语言相关辅助函数 ===
 function getLocalizedText(key, lang = currentLanguage) {
@@ -56,7 +60,13 @@ function getLocalizedText(key, lang = currentLanguage) {
             'radii-coord': '配位',
             'radii-spin': '自旋',
             'radii-crystal': '晶体',
-            'radii-ionic': '离子'
+            'radii-ionic': '离子',
+            'add-to-compare': '加入对比',
+            'compare': '比较',
+            'compare-selected': '已选 {n} 个元素',
+            'compare-title': '元素对比',
+            'already-in-compare': '已在对比中',
+            'max-compare': '最多对比 6 个元素'
         },
         en: {
             'alkali-metal': 'Alkali Metal',
@@ -99,7 +109,13 @@ function getLocalizedText(key, lang = currentLanguage) {
             'radii-coord': 'Coord',
             'radii-spin': 'Spin State',
             'radii-crystal': 'Crystal',
-            'radii-ionic': 'Ionic'
+            'radii-ionic': 'Ionic',
+            'add-to-compare': 'Add to compare',
+            'compare': 'Compare',
+            'compare-selected': '{n} elements selected',
+            'compare-title': 'Compare elements',
+            'already-in-compare': 'Already in compare',
+            'max-compare': 'Max 6 elements'
         }
     };
     return translations[lang][key] || key;
@@ -163,7 +179,6 @@ function renderTable() {
             <div class="name">${getElementName(e)}</div>
             <div class="detail-val"></div>
         `;
-        el.onclick = () => showModal(e);
 
         setTimeout(() => el.classList.add('visible'), i * 5);
         table.appendChild(el);
@@ -188,11 +203,7 @@ function renderTable() {
             <div class="range-num" style="color:${color}">${p.sym}</div>
             <div class="name">${p.name}</div>
         `;
-
-        el.onclick = () => {
-            const btns = document.querySelectorAll('.legend-item');
-            if (btns[p.catIdx]) btns[p.catIdx].click();
-        };
+        el.dataset.placeholderCat = p.catIdx;
 
         setTimeout(() => el.classList.add('visible'), 600);
         table.appendChild(el);
@@ -271,9 +282,31 @@ function getElectronData(Z) {
 function init() {
     renderLegend();
     renderTable();
+    initTableClick();
     initDragControl();
     initSearch();
     initKeyboard();
+    document.getElementById('compare-bar-open').innerText = getLocalizedText('compare');
+}
+
+// === 周期表点击：事件委托，避免元素格子点不进去 ===
+function initTableClick() {
+    table.addEventListener('click', function(ev) {
+        const cell = ev.target.closest('.element');
+        if (!cell) return;
+        if (cell.classList.contains('placeholder')) {
+            const catIdx = cell.dataset.placeholderCat;
+            if (catIdx !== undefined) {
+                const btns = document.querySelectorAll('.legend-item');
+                if (btns[catIdx]) btns[catIdx].click();
+            }
+            return;
+        }
+        const idx = cell.dataset.idx;
+        if (idx && elements[idx - 1]) {
+            showModal(elements[idx - 1]);
+        }
+    });
 }
 
 // === 分类切换 ===
@@ -426,6 +459,12 @@ function setLanguage(lang) {
             showModal(currentElement);
         }
     }
+    updateCompareBar();
+    document.getElementById('compare-bar-open').innerText = getLocalizedText('compare');
+    if (document.getElementById('compare-modal').classList.contains('open')) {
+        document.getElementById('compare-modal-title').innerText = getLocalizedText('compare-title');
+        renderCompareTable();
+    }
 }
 
 // === 渲染3D原子模型 ===
@@ -475,6 +514,11 @@ function render3DAtom(Z) {
     return shells;
 }
 
+// === 统一应用 3D 视角（旋转 + 缩放） ===
+function applyAtomTransform() {
+    if (atomContainer) atomContainer.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg) scale(${scale})`;
+}
+
 // === 拖拽控制 ===
 function initDragControl() {
     const wrapper = document.getElementById('atomWrapper');
@@ -492,8 +536,7 @@ function initDragControl() {
 
         rotY += dx * 0.5;
         rotX -= dy * 0.5;
-
-        atomContainer.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+        applyAtomTransform();
 
         lastMouseX = e.clientX;
         lastMouseY = e.clientY;
@@ -514,8 +557,7 @@ function initDragControl() {
 
         rotY += dx * 0.8;
         rotX -= dy * 0.8;
-
-        atomContainer.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+        applyAtomTransform();
 
         lastMouseX = e.touches[0].clientX;
         lastMouseY = e.touches[0].clientY;
@@ -526,9 +568,11 @@ function initDragControl() {
 
 // === 显示弹窗 ===
 function showModal(data) {
+    currentModalElement = data;
     rotX = 0;
     rotY = 0;
-    atomContainer.style.transform = `rotateX(0deg) rotateY(0deg)`;
+    scale = 1;
+    applyAtomTransform();
 
     // 更新标签文本
     document.getElementById('electron-config-label').innerText = getLocalizedText('electron-configuration');
@@ -632,7 +676,19 @@ function showModal(data) {
     render3DAtom(data.idx);
     modal.classList.add('open');
 
-    // 禁止背景滚动
+    const btnAddCompare = document.getElementById('btn-add-compare');
+    btnAddCompare.innerText = getLocalizedText('add-to-compare');
+    btnAddCompare.disabled = false;
+    btnAddCompare.title = '';
+    if (compareList.indexOf(data.idx) !== -1) {
+        btnAddCompare.innerText = getLocalizedText('already-in-compare');
+        btnAddCompare.disabled = true;
+    } else if (compareList.length >= MAX_COMPARE) {
+        btnAddCompare.innerText = getLocalizedText('max-compare');
+        btnAddCompare.disabled = true;
+        btnAddCompare.title = getLocalizedText('max-compare');
+    }
+
     document.body.style.overflow = 'hidden';
 }
 
@@ -642,6 +698,162 @@ function closeModal() {
     document.body.style.overflow = '';
     setTimeout(() => atomContainer.innerHTML = '', 300);
 }
+
+// === 元素对比 ===
+function addToCompareFromModal() {
+    if (currentModalElement) addToCompare(currentModalElement);
+}
+
+function addToCompare(el) {
+    if (compareList.indexOf(el.idx) !== -1) return;
+    if (compareList.length >= MAX_COMPARE) return;
+    compareList.push(el.idx);
+    updateCompareBar();
+    const btn = document.getElementById('btn-add-compare');
+    if (btn && currentModalElement && currentModalElement.idx === el.idx) {
+        btn.innerText = getLocalizedText('already-in-compare');
+        btn.disabled = true;
+    }
+}
+
+function updateCompareBar() {
+    const bar = document.getElementById('compare-bar');
+    const textEl = document.getElementById('compare-bar-text');
+    if (compareList.length === 0) {
+        bar.classList.remove('visible');
+        return;
+    }
+    bar.classList.add('visible');
+    textEl.innerText = getLocalizedText('compare-selected').replace('{n}', compareList.length);
+}
+
+function openCompareView() {
+    if (compareList.length === 0) return;
+    document.getElementById('compare-modal-title').innerText = getLocalizedText('compare-title');
+    renderCompareTable();
+    document.getElementById('compare-modal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function renderCompareTable() {
+    const thead = document.getElementById('compare-thead');
+    const tbody = document.getElementById('compare-tbody');
+    const list = compareList.map(idx => elements[idx - 1]).filter(Boolean);
+    if (list.length === 0) {
+        closeCompareView();
+        return;
+    }
+    const propLabels = {
+        sym: currentLanguage === 'zh' ? '符号' : 'Symbol',
+        name: currentLanguage === 'zh' ? '名称' : 'Name',
+        cat: currentLanguage === 'zh' ? '分类' : 'Category',
+        idx: getLocalizedText('atomic-number'),
+        mass: getLocalizedText('atomic-mass'),
+        radius: getLocalizedText('atomic-radius'),
+        en: getLocalizedText('electronegativity'),
+        ip: getLocalizedText('ionization-energy-kj'),
+        melt: getLocalizedText('melting-point-k'),
+        boil: getLocalizedText('boiling-point-k'),
+        valence: getLocalizedText('common-oxidation-states'),
+        config: getLocalizedText('electron-configuration'),
+        radiiCount: currentLanguage === 'zh' ? '离子半径条数' : 'Ionic radii count',
+        radiiShannon: getLocalizedText('radii-shannon')
+    };
+    const toAngstrom = v => v != null ? (v / 100).toFixed(3).replace(/\.?0+$/, '') : '—';
+    const chargeStr = c => c ? (String(c).startsWith('-') ? c : '+' + c) : '';
+    const spinStr = s => (s && String(s).trim()) ? s : '';
+    const radiiKey = r => (r.charge || '') + '|' + (r.coord || '') + '|' + spinStr(r.spin);
+    const getRadiiByKey = (el, key) => {
+        if (!el.radii || !key) return null;
+        const [charge, coord, spin] = key.split('|');
+        const s = spinStr(spin);
+        const found = el.radii.find(r => String(r.charge || '') === charge && String(r.coord || '') === coord && spinStr(r.spin) === s);
+        return found ? { crystal: toAngstrom(found.crystal), ionic: toAngstrom(found.ionic) } : null;
+    };
+    const allRadiiKeys = new Set();
+    list.forEach(el => {
+        if (el.radii) el.radii.forEach(r => allRadiiKeys.add(radiiKey(r)));
+    });
+    const coordOrder = ['II', 'III', 'IV', 'IVSQ', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XII'];
+    const sortKey = k => {
+        const [ch, coord, spin] = k.split('|');
+        const n = parseInt(ch, 10);
+        const c = isNaN(n) ? 999 : n;
+        const co = coordOrder.indexOf(coord);
+        return (c * 1000 + (co >= 0 ? co : 999)) * 1000 + (spin ? (spin.toLowerCase().includes('low') ? 0 : 1) : 0);
+    };
+    const sortedRadiiKeys = Array.from(allRadiiKeys).sort((a, b) => sortKey(a) - sortKey(b));
+
+    thead.innerHTML = '<tr><th>' + (currentLanguage === 'zh' ? '属性' : 'Property') + '</th>' +
+        list.map(el => `<th class="compare-col-header"><span style="color:${el.cat.color}">${el.sym}</span> <button type="button" class="compare-remove-btn" onclick="removeFromCompare(${el.idx})" title="">×</button></th>`).join('') + '</tr>';
+    const rows = [
+        { key: 'sym', get: el => el.sym },
+        { key: 'name', get: el => getElementName(el) },
+        { key: 'cat', get: el => getCategoryName(el.cat) },
+        { key: 'idx', get: el => el.idx },
+        { key: 'mass', get: el => el.mass },
+        { key: 'radius', get: el => el.radius || '—' },
+        { key: 'en', get: el => el.en || '—' },
+        { key: 'ip', get: el => el.ip || '—' },
+        { key: 'melt', get: el => el.melt || '—' },
+        { key: 'boil', get: el => el.boil || '—' },
+        { key: 'valence', get: el => (el.valence && el.valence.length) ? el.valence.join(', ') : '—' },
+        { key: 'config', get: el => getElectronData(el.idx).str },
+        { key: 'radiiCount', get: el => (el.radii && el.radii.length) ? el.radii.length : '0' }
+    ];
+    let html = rows.map(r => {
+        const raw = (v) => (v === undefined || v === null) ? '—' : String(v);
+        return '<tr><td class="compare-prop-label">' + propLabels[r.key] + '</td>' +
+            list.map(el => '<td>' + raw(r.get(el)) + '</td>').join('') + '</tr>';
+    }).join('');
+
+    if (sortedRadiiKeys.length > 0) {
+        const radiiSectionLabel = getLocalizedText('radii-shannon');
+        const hintSub = currentLanguage === 'zh' ? '晶体 / 离子 (Å)' : 'crystal / ionic (Å)';
+        html += '<tr class="compare-radii-section-row"><td class="compare-prop-label compare-radii-section-label" colspan="' + (list.length + 1) + '">' + radiiSectionLabel + ' <span class="compare-radii-hint">' + hintSub + '</span></td></tr>';
+        sortedRadiiKeys.forEach(key => {
+            const [charge, coord, spin] = key.split('|');
+            const ch = chargeStr(charge);
+            const cond = ch + ' ' + (coord || '—') + (spin ? ' ' + spin : '');
+            const cells = list.map(el => {
+                const v = getRadiiByKey(el, key);
+                if (!v) return '<td class="compare-radii-td compare-radii-value">—</td>';
+                return '<td class="compare-radii-td compare-radii-value"><span class="compare-radii-crystal">' + v.crystal + '</span> <span class="compare-radii-sep">/</span> <span class="compare-radii-ionic">' + v.ionic + '</span></td>';
+            }).join('');
+            html += '<tr class="compare-radii-data-row"><td class="compare-radii-condition">' + cond + '</td>' + cells + '</tr>';
+        });
+    }
+    tbody.innerHTML = html;
+}
+
+function removeFromCompare(idx) {
+    compareList = compareList.filter(i => i !== idx);
+    updateCompareBar();
+    if (compareList.length === 0) {
+        closeCompareView();
+        return;
+    }
+    renderCompareTable();
+    if (currentModalElement && document.getElementById('modal').classList.contains('open')) {
+        const btn = document.getElementById('btn-add-compare');
+        if (currentModalElement.idx === idx) {
+            btn.innerText = getLocalizedText('add-to-compare');
+            btn.disabled = false;
+        } else if (compareList.indexOf(currentModalElement.idx) === -1 && compareList.length < MAX_COMPARE) {
+            btn.innerText = getLocalizedText('add-to-compare');
+            btn.disabled = false;
+        }
+    }
+}
+
+function closeCompareView() {
+    document.getElementById('compare-modal').classList.remove('open');
+    document.body.style.overflow = modal.classList.contains('open') ? 'hidden' : '';
+}
+
+document.getElementById('compare-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeCompareView();
+});
 
 // === 搜索功能 ===
 function initSearch() {
@@ -677,7 +889,10 @@ function initSearch() {
 // === 键盘事件 ===
 function initKeyboard() {
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeModal();
+        if (e.key === 'Escape') {
+            if (document.getElementById('compare-modal').classList.contains('open')) closeCompareView();
+            else closeModal();
+        }
     });
 }
 

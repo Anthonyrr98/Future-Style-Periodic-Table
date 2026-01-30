@@ -56,6 +56,7 @@
                     <div class="big-symbol" id="m-symbol">Fe</div>
                     <div class="big-name"><span id="m-name">铁</span> <span id="m-en-name" style="font-size:16px;color:#666; margin-left:8px;">Iron</span></div>
                     <div class="category-tag" id="m-cat">过渡金属</div>
+                    <button type="button" class="compare-add-btn" id="btn-add-compare" onclick="addToCompareFromModal()" title="">加入对比</button>
                 </div>
 
                 <div class="config-box">
@@ -96,6 +97,28 @@
                         </table>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 对比栏：已选元素后显示 -->
+    <div class="compare-bar" id="compare-bar">
+        <span class="compare-bar-text" id="compare-bar-text"></span>
+        <button type="button" class="compare-bar-btn" id="compare-bar-open" onclick="openCompareView()">比较</button>
+    </div>
+
+    <!-- 对比弹窗 -->
+    <div class="modal-overlay" id="compare-modal">
+        <div class="compare-card">
+            <div class="compare-header">
+                <h2 id="compare-modal-title">元素对比</h2>
+                <span class="close-btn" onclick="closeCompareView()">&times;</span>
+            </div>
+            <div class="compare-table-wrapper">
+                <table class="compare-table" id="compare-table">
+                    <thead id="compare-thead"></thead>
+                    <tbody id="compare-tbody"></tbody>
+                </table>
             </div>
         </div>
     </div>
