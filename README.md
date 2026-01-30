@@ -129,6 +129,20 @@ Future-Style-Periodic-Table/
 
 ---
 
+## 📦 部署到 GitHub Pages
+
+1. 将本仓库 **Fork** 或 **Push** 到你自己的 GitHub 账号下。
+2. 打开仓库 **Settings** → **Pages**。
+3. 在 **Source** 中选择 **Deploy from a branch**。
+4. **Branch** 选择 `main`（或你的默认分支），**Folder** 选择 `/ (root)`。
+5. 保存后等待 1–2 分钟，访问：  
+   `https://<你的用户名>.github.io/Future-Style-Periodic-Table/`  
+   即可看到在线版本。
+
+项目内资源已使用相对路径 `./`，在子路径下也可正常加载。
+
+---
+
 ## 🤝 致谢 (Credits)
 
 本项目的灵感来源于网络创作者的分享，在此表示由衷的感谢！
